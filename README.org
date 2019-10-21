@@ -1,0 +1,17 @@
+#+OPTIONS: toc:nil
+#+OPTIONS: num:nil
+#+OPTIONS: html-postamble:nil
+
+* About
+This is a supplementary code (in Python 3.6) for the paper Y. Malitsky and K. Mishchenko
+[[https://arxiv.org/abs/1803.08832]["Adaptive gradient descent without descent"]]
+
+* Usage
+There are 5 experiments in total, each of them has its own Jupyter notebook.
+
+** Quadratic minimization
+** Logistic regression 
+** Matrix facorization
+** Neural networks
+** Cubic regularization
+
