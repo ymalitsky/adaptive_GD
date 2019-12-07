@@ -139,7 +139,7 @@ def ad_grad_accel(J, df, x0, la_0=1e-6, numb_iter=100):
         norm_grad = LA.norm(grad - grad_old)
         la = min(np.sqrt(1 + th) * la_old,  0.5 * safe_division(norm_x, norm_grad))
         Lambda = min(
-            np.sqrt(1 + Th) * Lambda_old,  0.5 * safe_division(norm_grad, norm_x))
+            np.sqrt(1 + Th) * Lambda_old,  0.5 / safe_division(norm_x, norm_grad))
         th = la / la_old
         Th = Lambda / Lambda_old
         t = np.sqrt(Lambda * la)
@@ -155,7 +155,7 @@ def ad_grad_accel(J, df, x0, la_0=1e-6, numb_iter=100):
         steps_array.append(la)
     end = perf_counter()
 
-    print("Time execution of adaptive gradient descent:", end - begin)
+    print("Time execution of accelerated adaptive gradient descent:", end - begin)
     return np.array(values), x, steps_array
 
 
