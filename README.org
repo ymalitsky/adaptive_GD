@@ -9,8 +9,20 @@ This is a supplementary code (in Python 3.6) for the paper Y. Malitsky and K. Mi
 There are 5 experiments in total, each of them has its own Jupyter notebook.
 
 ** Quadratic minimization
+[[https://github.com/ymalitsky/adaptive_GD/blob/master/quadratic_minimization.ipynb][Open jupyter notebook]]
 ** Logistic regression 
-** Matrix facorization
+[[https://github.com/ymalitsky/adaptive_GD/blob/master/logistic_regression.ipynb][Open jupyter notebook]]
+** Matrix factorization
+[[https://github.com/ymalitsky/adaptive_GD/blob/master/matrix_factorization.ipynb][Open jupyter notebook]]
 ** Neural networks
 ** Cubic regularization
 
+If you find this code useful please cite our paper:
+```
+@article{malitsky2019adaptive,
+  title={Adaptive gradient descent without descent},
+  author={Malitsky, Yura and Mishchenko, Konstantin},
+  journal={arXiv preprint arXiv:1910.09529},
+  year={2019}
+}
+```
