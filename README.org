@@ -18,11 +18,11 @@ There are 5 experiments in total, each of them has its own Jupyter notebook.
 ** Cubic regularization
 
 If you find this code useful please cite our paper:
-```
+#+BEGIN_QUOTE
 @article{malitsky2019adaptive,
   title={Adaptive gradient descent without descent},
   author={Malitsky, Yura and Mishchenko, Konstantin},
   journal={arXiv preprint arXiv:1910.09529},
   year={2019}
 }
-```
+#+END_QUOTE
