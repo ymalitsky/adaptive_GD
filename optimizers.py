@@ -63,7 +63,10 @@ class Ad_grad(Trainer):
         
     def estimate_stepsize(self):
         L = la.norm(self.grad - self.grad_old) / la.norm(self.w - self.w_old)
-        lr_new = min(np.sqrt(1 + self.theta) * self.lr, self.eps / self.lr + 0.5 / L)
+        if np.isinf(self.theta):
+            lr_new = 0.5 / L
+        else:
+            lr_new = min(np.sqrt(1 + self.theta) * self.lr, self.eps / self.lr + 0.5 / L)
         self.theta = lr_new / self.lr
         self.lr = lr_new
         
