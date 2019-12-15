@@ -39,7 +39,7 @@ def logsig(x):
     return out
 
 
-def loss(w, X, y, l2):
+def logistic_loss(w, X, y, l2):
     """Logistic loss, numerically stable implementation.
     
     Parameters
@@ -62,7 +62,7 @@ def loss(w, X, y, l2):
     return np.mean((1 - y) * z - logsig(z)) + l2 / 2 * la.norm(w) ** 2
 
 
-def gradient(w, X, y_, l2, normalize=True):
+def logistic_gradient(w, X, y_, l2, normalize=True):
     """
     Gradient of the logistic loss at point w with features X, labels y and l2 regularization.
     If labels are from {-1, 1}, they will be changed to {0, 1} internally
@@ -74,3 +74,18 @@ def gradient(w, X, y_, l2, normalize=True):
     if normalize:
         return grad
     return grad * len(y)
+
+
+def cubic_loss(w, H, g, M, scale=1):
+    """
+    Loss values of quadratic with cubic regularization.
+    To make M independent of the gradient/Hessian rescaling, we scale it with the last argument.
+    """
+    return w @ g + 0.5 * H @ w @ w + scale * M / 6 * la.norm(w) ** 3
+
+def cubic_gradient(w, H, g, M, scale=1):
+    """
+    Gradient of quadratic with cubic regularization.
+    To make M independent of the gradient/Hessian rescaling, we scale them with the last argument.
+    """
+    return (g + H @ w) / scale + M / 2 * w * la.norm(w)

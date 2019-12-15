@@ -4,26 +4,27 @@ import time
 import numpy.linalg as la
 import matplotlib.pyplot as plt
 
-from loss_functions import gradient, loss
 
 class Trainer:
     """
     Base class for experiments with logistic regression. Provides methods
     for running optimization methods, saving the logs and plotting the results.
     """
-    def __init__(self, t_max=np.inf, it_max=np.inf, output_size=500, tolerance=0):
+    def __init__(self, grad_func, loss_func, t_max=np.inf, it_max=np.inf, output_size=500, tolerance=0):
         if t_max is np.inf and it_max is np.inf:
             it_max = 100
             print('The number of iterations is set to 100.')
+        self.grad_func = grad_func
+        self.loss_func = loss_func
         self.t_max = t_max
         self.it_max = it_max
         self.output_size = output_size
         self.first_run = True
         self.tolerance = tolerance
     
-    def run(self, w0, X, y, l2):
+    def run(self, w0):
         if self.first_run:
-            self.init_run(w0, X, y, l2)
+            self.init_run(w0)
         else:
             self.ts = list(self.ts)
             self.its = list(self.its)
@@ -43,7 +44,7 @@ class Trainer:
         self.ws = np.array(self.ws)
         
     def compute_grad(self):
-        self.grad = gradient(self.w, self.X, self.y, self.l2)
+        self.grad = self.grad_func(self.w)
         return la.norm(self.grad) > self.tolerance
         
     def estimate_stepsize(self):
@@ -52,13 +53,8 @@ class Trainer:
     def step(self):
         pass
             
-    def init_run(self, w0, X, y, l2):
-        self.X = X
-        self.y = y
-        self.l2 = l2
-        self.n, self.d = X.shape
-        assert(len(w0) == self.d)
-        assert(len(y) == self.n)
+    def init_run(self, w0):
+        self.d = len(w0)
         self.w = w0.copy()
         self.ws = [w0.copy()]
         self.its = [0]
@@ -83,12 +79,9 @@ class Trainer:
         self.ws.append(self.w.copy())
         self.ts.append(self.t)
         self.its.append(self.it)
-        
-    def iterate_loss(self, w):
-        return loss(w, self.X, self.y, self.l2)
     
     def compute_loss_on_iterates(self):
-        self.losses = np.array([self.iterate_loss(w) for w in self.ws])
+        self.losses = np.array([self.loss_func(w) for w in self.ws])
     
     def plot_losses(self, label='', marker=',', f_star=None, markevery=None):
         if self.losses is None:

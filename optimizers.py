@@ -3,7 +3,6 @@ import numpy as np
 import numpy.linalg as la
 
 from trainer import Trainer
-from loss_functions import gradient
 
 
 class Gd(Trainer):
@@ -13,7 +12,7 @@ class Gd(Trainer):
     Arguments:
         lr (float, optional): an estimate of the inverse smoothness constant
     """
-    def __init__(self, lr=None, *args, **kwargs):
+    def __init__(self, lr, *args, **kwargs):
         super(Gd, self).__init__(*args, **kwargs)
         self.lr = lr
         
@@ -22,9 +21,6 @@ class Gd(Trainer):
     
     def init_run(self, *args, **kwargs):
         super(Gd, self).init_run(*args, **kwargs)
-        if self.lr is None:
-            L = 0.25 * np.max(la.eigvalsh(self.X.T @ self.X / self.X.shape[0]))
-            self.lr = 1 / L
     
     
 class Nesterov(Trainer):
@@ -34,7 +30,7 @@ class Nesterov(Trainer):
     Arguments:
         lr (float, optional): an estimate of the inverse smoothness constant
     """
-    def __init__(self, lr=None, *args, **kwargs):
+    def __init__(self, lr, *args, **kwargs):
         super(Nesterov, self).__init__(*args, **kwargs)
         self.lr = lr
         
@@ -48,9 +44,6 @@ class Nesterov(Trainer):
     
     def init_run(self, *args, **kwargs):
         super(Nesterov, self).init_run(*args, **kwargs)
-        if self.lr is None:
-            L = 0.25 * np.max(la.eigvalsh(self.X.T @ self.X / self.X.shape[0]))
-            self.lr = 1 / L
         self.w_nesterov = self.w.copy()
         self.alpha = 1.
     
@@ -83,9 +76,9 @@ class Ad_grad(Trainer):
         super(Ad_grad, self).init_run(*args, **kwargs)
         self.lrs = []
         self.theta = np.inf
-        grad = gradient(self.w, self.X, self.y, self.l2)
+        grad = self.grad_func(self.w)
         # The first estimate is normalized gradient with a small coefficient
-        self.lr = 1 / la.norm(grad)
+        self.lr = 1e-5 / la.norm(grad)
         self.w_old = self.w.copy()
         self.grad_old = grad
         self.w -= self.lr * grad
@@ -137,9 +130,9 @@ class Ad_grad_accel(Trainer):
         self.lrs = []
         self.theta_lr = np.inf
         self.theta_mu = np.inf
-        grad = gradient(self.w, self.X, self.y, self.l2)
+        grad = self.grad_func(self.w)
         # The first estimate is normalized gradient with a small coefficient
-        self.lr = 1 / la.norm(grad)
+        self.lr = 1e-5 / la.norm(grad)
         self.mu = 1 / self.lr
         self.w_old = self.w.copy()
         self.w_nesterov = self.w.copy()
