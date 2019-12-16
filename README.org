@@ -16,8 +16,9 @@ There are 5 experiments in total, each of them has its own Jupyter notebook.
 [[https://github.com/ymalitsky/adaptive_GD/blob/master/matrix_factorization.ipynb][Open jupyter notebook]]
 ** Neural networks
 ** Cubic regularization
+[[https://github.com/ymalitsky/adaptive_GD/blob/master/cubic_regularization.ipynb][Open jupyter notebook]]
 
-If you find this code useful please cite our paper:
+If you find this code useful, please cite our paper:
 #+BEGIN_SRC
 @article{malitsky2019adaptive,
   title={Adaptive gradient descent without descent},
