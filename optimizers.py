@@ -29,18 +29,32 @@ class Nesterov(Trainer):
     
     Arguments:
         lr (float, optional): an estimate of the inverse smoothness constant
+        strongly_convex (boolean, optional): if true, uses the variant
+            for strongly convex functions, which requires mu>0 (default: False)
+        lr (float, optional): an estimate of the inverse smoothness constant
     """
-    def __init__(self, lr, *args, **kwargs):
+    def __init__(self, lr, strongly_convex=False, mu=0, *args, **kwargs):
         super(Nesterov, self).__init__(*args, **kwargs)
         self.lr = lr
+        if mu < 0:
+            raise ValueError("Invalid mu: {}".format(mu))
+        if strongly_convex and mu == 0:
+            raise ValueError("""Mu must be larger than 0 for strongly_convex=True,
+                             invalid value: {}""".format(mu))
+        if strongly_convex:
+            self.mu = mu
+            kappa = (1/self.lr)/self.mu
+            self.momentum = (np.sqrt(kappa)-1) / (np.sqrt(kappa)+1)
+        self.strongly_convex = strongly_convex
         
     def step(self):
-        alpha_new = 0.5 * (1 + np.sqrt(1 + 4 * self.alpha ** 2))
-        momentum = (self.alpha - 1) / alpha_new
-        self.alpha = alpha_new
+        if not self.strongly_convex:
+            alpha_new = 0.5 * (1 + np.sqrt(1 + 4 * self.alpha ** 2))
+            self.momentum = (self.alpha - 1) / alpha_new
+            self.alpha = alpha_new
         self.w_nesterov_old = self.w_nesterov.copy()
         self.w_nesterov = self.w - self.lr * self.grad
-        return self.w_nesterov + momentum * (self.w_nesterov - self.w_nesterov_old)
+        return self.w_nesterov + self.momentum * (self.w_nesterov - self.w_nesterov_old)
     
     def init_run(self, *args, **kwargs):
         super(Nesterov, self).init_run(*args, **kwargs)
@@ -48,18 +62,19 @@ class Nesterov(Trainer):
         self.alpha = 1.
     
     
-class Ad_grad(Trainer):
+class Adgd(Trainer):
     """
     Adaptive gradient descent based on the local smoothness constant
     
     Arguments:
         eps (float): an estimate of 1 / L^2, where L is the global smoothness constant
     """
-    def __init__(self, eps=0.0, *args, **kwargs):
+    def __init__(self, eps=0.0, lr0=None, *args, **kwargs):
         if not 0.0 <= eps:
             raise ValueError("Invalid eps: {}".format(eps))
-        super(Ad_grad, self).__init__(*args, **kwargs)
+        super(Adgd, self).__init__(*args, **kwargs)
         self.eps = eps
+        self.lr0 = lr0
         
     def estimate_stepsize(self):
         L = la.norm(self.grad - self.grad_old) / la.norm(self.w - self.w_old)
@@ -76,36 +91,37 @@ class Ad_grad(Trainer):
         return self.w - self.lr * self.grad
         
     def init_run(self, *args, **kwargs):
-        super(Ad_grad, self).init_run(*args, **kwargs)
-        self.lrs = []
+        super(Adgd, self).init_run(*args, **kwargs)
         self.theta = np.inf
         grad = self.grad_func(self.w)
-        # The first estimate is normalized gradient with a small coefficient
-        self.lr = 1e-5 / la.norm(grad)
+        if self.lr0 is None:
+            self.lr0 = 1e-10
+        self.lr = self.lr0
+        self.lrs = [self.lr]
         self.w_old = self.w.copy()
         self.grad_old = grad
         self.w -= self.lr * grad
         self.save_checkpoint()
         
     def update_logs(self):
-        super(Ad_grad, self).update_logs()
+        super(Adgd, self).update_logs()
         self.lrs.append(self.lr)
         
         
-class Ad_grad_accel(Trainer):
+class AdgdAccel(Trainer):
     """
     Adaptive gradient descent with heuristic Nesterov's acceleration
     Targeted at locally strongly convex functions, so by default uses
     estimation with min(sqrt(1 + theta_{k-1} / 2) * la_{k-1}, 0.5 / L_k)
     
     Arguments:
-        a_lr (float, optional): increase parameter for learning rate
-        a_mu (float, optional): increase parameter for strong convexity
-        b_lr (float, optional): local smoothness scaling
-        b_mu (float, optional): local strong convexity scaling
+        a_lr (float, optional): increase parameter for learning rate (default: 0.5)
+        a_mu (float, optional): increase parameter for strong convexity (default: 0.5)
+        b_lr (float, optional): local smoothness scaling (default: 0.5)
+        b_mu (float, optional): local strong convexity scaling (default: 0.5)
     """
     def __init__(self, a_lr=0.5, a_mu=0.5, b_lr=0.5, b_mu=0.5, *args, **kwargs):
-        super(Ad_grad_accel, self).__init__(*args, **kwargs)
+        super(AdgdAccel, self).__init__(*args, **kwargs)
         self.a_lr = a_lr
         self.a_mu = a_mu
         self.b_lr = b_lr
@@ -129,13 +145,13 @@ class Ad_grad_accel(Trainer):
         return self.w_nesterov + momentum * (self.w_nesterov - self.w_nesterov_old)
         
     def init_run(self, *args, **kwargs):
-        super(Ad_grad_accel, self).init_run(*args, **kwargs)
-        self.lrs = []
+        super(AdgdAccel, self).init_run(*args, **kwargs)
         self.theta_lr = np.inf
         self.theta_mu = np.inf
         grad = self.grad_func(self.w)
         # The first estimate is normalized gradient with a small coefficient
         self.lr = 1e-5 / la.norm(grad)
+        self.lrs = [self.lr]
         self.mu = 1 / self.lr
         self.w_old = self.w.copy()
         self.w_nesterov = self.w.copy()
@@ -144,7 +160,7 @@ class Ad_grad_accel(Trainer):
         self.save_checkpoint()
         
     def update_logs(self):
-        super(Ad_grad_accel, self).update_logs()
+        super(AdgdAccel, self).update_logs()
         self.lrs.append(self.lr)
 
         
@@ -156,11 +172,11 @@ class Adagrad(Trainer):
     
     Arguments:
         primal_dual (boolean, optional): if true, uses the dual averaging method of Nesterov, 
-            otherwise uses gradient descent update
-        eta (float, optional): learning rate scaling, default is 1, but needs to be tuned to
-            get better performance
+            otherwise uses gradient descent update (default: False)
+        eta (float, optional): learning rate scaling, but needs to be tuned to
+            get better performance (default: 1)
         delta (float, optional): another learning rate parameter, slows down performance if
-            chosen too large, so by default is 0, otherwise requires tuning
+            chosen too large, otherwise requires tuning (default: 0)
     """
     def __init__(self, primal_dual=False, eta=1, delta=0, *args, **kwargs):
         super(Adagrad, self).__init__(*args, **kwargs)
@@ -185,3 +201,22 @@ class Adagrad(Trainer):
         self.w0 = self.w.copy()
         self.s = np.zeros(len(self.w))
         self.sum_grad = np.zeros(self.d)
+        
+        
+class MirrorDescent(Trainer):
+    """
+    Gradient descent with constant learning rate.
+    
+    Arguments:
+        lr (float, optional): an estimate of the inverse smoothness constant
+    """
+    def __init__(self, lr, mirror_step, *args, **kwargs):
+        super(MirrorDescent, self).__init__(*args, **kwargs)
+        self.lr = lr
+        self.mirror_step = mirror_step
+        
+    def step(self):
+        return self.mirror_step(self.w, self.lr, self.grad)
+    
+    def init_run(self, *args, **kwargs):
+        super(MirrorDescent, self).init_run(*args, **kwargs)

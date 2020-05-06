@@ -21,6 +21,7 @@ class Trainer:
         self.output_size = output_size
         self.first_run = True
         self.tolerance = tolerance
+        self.losses = None
     
     def run(self, w0):
         if self.first_run:
@@ -89,5 +90,5 @@ class Trainer:
         if f_star is None:
             f_star = np.min(self.losses)
         if markevery is None:
-            markevery = len(self.losses) // 20
+            markevery = max(1, len(self.losses) // 20)
         plt.plot(self.its, self.losses - f_star, label=label, marker=marker, markevery=markevery)
