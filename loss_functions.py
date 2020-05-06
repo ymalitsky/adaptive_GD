@@ -81,11 +81,12 @@ def cubic_loss(w, H, g, M, scale=1):
     Loss values of quadratic with cubic regularization.
     To make M independent of the gradient/Hessian rescaling, we scale it with the last argument.
     """
-    return w @ g + 0.5 * H @ w @ w + scale * M / 6 * la.norm(w) ** 3
+    return w@g + 0.5*H@w@w + scale*M/6*la.norm(w)**3
+
 
 def cubic_gradient(w, H, g, M, scale=1):
     """
     Gradient of quadratic with cubic regularization.
     To make M independent of the gradient/Hessian rescaling, we scale them with the last argument.
     """
-    return (g + H @ w) / scale + M / 2 * w * la.norm(w)
+    return (g+H@w)/scale + M/2*w*la.norm(w)
