@@ -26,7 +26,7 @@ def ad_grad(J, df, x0, la_0=1e-6, numb_iter=100):
     th = 1e9
     steps_array = []
     values = [J(grad_old)]
-    
+
     for i in range(numb_iter):
         grad = df(x)
         norm_x = LA.norm(x - x_old)
@@ -58,7 +58,7 @@ def ad_grad_tighter(J, df, x0, la_0=1e-6, numb_iter=100):
     la_old = steps_array[-1]
     grad_old = df(x_old)
     x = x_old - la_old * grad_old
-    
+
     for i in range(numb_iter):
         grad = df(x)
         norm_x = LA.norm(x - x_old)
@@ -96,7 +96,7 @@ def ad_grad_smooth(J, df, x0, L, numb_iter=100):
     x = x0 - la_old * grad_old
     values = [J(grad_old)]
     steps_array = []
-    
+
     for i in range(numb_iter):
         grad = df(x)
         norm_x = LA.norm(x - x_old)
@@ -194,6 +194,27 @@ def accel_gd(J, df, x0, la, numb_iter=100):
         y = x1 + (t - 1) / t1 * (x1 - x)
         values.append(J(grad))
         x, t = x1, t1
+    end = perf_counter()
+    print("Time execution for accelerated GD:", end - begin)
+    return np.array(values), x
+
+
+def accel_str_gd(J, df, x0, la, mu, numb_iter=100):
+    """
+    Accelerated (Nesterov) gradient descent for minimizing smooth strongly convex f.
+    """
+    begin = perf_counter()
+    x, y = x0.copy(), x0.copy()
+    kappa = np.sqrt((1/la) / mu)
+    beta = (kappa - 1) / (kappa + 1)
+    values = [J(df(x0))]
+
+    for i in range(numb_iter):
+        grad = df(x)
+        y1 = x - la * grad
+        x = y1 + beta * (y1 - y)
+        values.append(J(grad))
+        y = y1
     end = perf_counter()
     print("Time execution for accelerated GD:", end - begin)
     return np.array(values), x

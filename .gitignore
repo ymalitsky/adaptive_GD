@@ -1,0 +1,16 @@
+# Python
+*.py[co]
+__pycache__
+.ipynb_checkpoints
+.cache
+
+
+# Emacs
+/auto/
+*_flymake.*
+auto-save-list
+*~
+\#*\#
+*.elc
+.\#*
+*_archive

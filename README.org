@@ -1,23 +1,24 @@
-#+OPTIONS: toc:nil
-#+OPTIONS: num:nil
-#+OPTIONS: html-postamble:nil
-
 * About
-This is a supplementary code (in Python 3.6) for the paper Y. Malitsky and K. Mishchenko [[https://arxiv.org/pdf/1910.09529.pdf]["Adaptive gradient descent without descent"]]
+This is a supplementary code (in Python 3.6) for the paper Y. Malitsky and K. Mishchenko [[https://arxiv.org/pdf/1910.09529.pdf]["Adaptive Gradient Descent without Descent"]]
+
+
+Assumming you want to minimize a differentiable function /f/ without trial and errors by a simple and reliable method, what are the options?  Our proposed method may come to rescue. It is merely 3 lines:
+--------
+#+html: <p align="center"><img src="img/alg.svg" /></p>
+--------
+
+It automatically finds a right stepsize. And it goes with a nice and simple proof.
+
 
 * Usage
 There are 5 experiments in total, each of them has its own Jupyter notebook.
 
-** Quadratic minimization
-[[https://github.com/ymalitsky/adaptive_GD/blob/master/quadratic_minimization.ipynb][Open jupyter notebook]]
-** Logistic regression 
-[[https://github.com/ymalitsky/adaptive_GD/blob/master/logistic_regression.ipynb][Open jupyter notebook]]
-** Matrix factorization
-[[https://github.com/ymalitsky/adaptive_GD/blob/master/matrix_factorization.ipynb][Open jupyter notebook]]
-** Neural networks
-** Cubic regularization
-[[https://github.com/ymalitsky/adaptive_GD/blob/master/cubic_regularization.ipynb][Open jupyter notebook]]
+- [[logistic_regression.ipynb][Logistic regression]]
+- [[matrix_factorization.ipynb][Matrix factorization]]
+- [[cubic_regularization.ipynb][Cubic regularization]]
+- Neural networks
 
+* Reference
 If you find this code useful, please cite our paper:
 #+BEGIN_SRC
 @article{malitsky2019adaptive,
