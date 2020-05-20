@@ -1,22 +1,19 @@
 * About
-This is a supplementary code (in Python 3.6) for the paper Y. Malitsky and K. Mishchenko [[https://arxiv.org/pdf/1910.09529.pdf]["Adaptive Gradient Descent without Descent"]]
+This is the supplementary code (in Python 3.6) for the paper Y. Malitsky and K. Mishchenko [[https://arxiv.org/pdf/1910.09529.pdf]["Adaptive Gradient Descent without Descent"]]
 
 
-Assumming you want to minimize a differentiable function /f/ without trial and errors by a simple and reliable method, what are the options?  Our proposed method may come to rescue. It is merely 3 lines:
+The implemented adaptive method is a reliable too for minimizing differentiable functions. It is among the most general gradient-based algorithms and its fast performance is theoretically guaranteed. The method is merely 3 lines:
 --------
 #+html: <p align="center"><img src="img/alg.svg" /></p>
 --------
 
-It automatically finds a right stepsize. And it goes with a nice and simple proof.
-
-
 * Usage
-There are 5 experiments in total, each of them has its own Jupyter notebook.
+There are 4 experiments in total. The first three are provided in the form of a Jupyter notebook and for the neural networks we include a PyTorch implementation of the proposed optimizer.
 
 - [[logistic_regression.ipynb][Logistic regression]]
 - [[matrix_factorization.ipynb][Matrix factorization]]
 - [[cubic_regularization.ipynb][Cubic regularization]]
-- Neural networks
+- [[pytorch/optimizer.py][Neural networks]]
 
 * Reference
 If you find this code useful, please cite our paper:
