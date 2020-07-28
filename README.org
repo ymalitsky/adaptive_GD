@@ -1,8 +1,8 @@
 * About
-This is the supplementary code (in Python 3.6) for the paper Y. Malitsky and K. Mishchenko [[https://arxiv.org/pdf/1910.09529.pdf]["Adaptive Gradient Descent without Descent"]]
+This is the supplementary code (in Python 3.6) for the paper Y. Malitsky and K. Mishchenko "Adaptive Gradient Descent without Descent"
+(two-column [[https://proceedings.icml.cc/static/paper_files/icml/2020/2854-Paper.pdf][ICML]] or one-column [[https://arxiv.org/pdf/1910.09529.pdf][arxiv]])
 
-
-The implemented adaptive method is a reliable tool for minimizing differentiable functions. It is among the most general gradient-based algorithms and its fast performance is theoretically guaranteed. The method is merely 3 lines:
+The implemented adaptive method is a reliable tool for minimizing differentiable functions. It is among the most general gradient-based algorithms and its fast performance is theoretically guaranteed. The method is merely 2 lines:
 --------
 #+html: <p align="center"><img src="img/alg.svg" /></p>
 --------
