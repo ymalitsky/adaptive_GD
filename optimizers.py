@@ -10,7 +10,7 @@ class Gd(Trainer):
     Gradient descent with constant learning rate.
     
     Arguments:
-        lr (float, optional): an estimate of the inverse smoothness constant
+        lr (float): an estimate of the inverse smoothness constant
     """
     def __init__(self, lr, *args, **kwargs):
         super(Gd, self).__init__(*args, **kwargs)
@@ -28,10 +28,9 @@ class Nesterov(Trainer):
     Nesterov's accelerated gradient descent with constant learning rate.
     
     Arguments:
-        lr (float, optional): an estimate of the inverse smoothness constant
+        lr (float): an estimate of the inverse smoothness constant
         strongly_convex (boolean, optional): if true, uses the variant
             for strongly convex functions, which requires mu>0 (default: False)
-        lr (float, optional): an estimate of the inverse smoothness constant
     """
     def __init__(self, lr, strongly_convex=False, mu=0, *args, **kwargs):
         super(Nesterov, self).__init__(*args, **kwargs)
@@ -67,7 +66,7 @@ class Adgd(Trainer):
     Adaptive gradient descent based on the local smoothness constant
     
     Arguments:
-        eps (float): an estimate of 1 / L^2, where L is the global smoothness constant
+        eps (float, optional): an estimate of 1 / L^2, where L is the global smoothness constant (default: 0)
     """
     def __init__(self, eps=0.0, lr0=None, *args, **kwargs):
         if not 0.0 <= eps:
@@ -220,3 +219,191 @@ class MirrorDescent(Trainer):
     
     def init_run(self, *args, **kwargs):
         super(MirrorDescent, self).init_run(*args, **kwargs)
+        
+        
+class Bb(Trainer):
+    """
+    Barzilai-Borwein Adaptive gradient descent based on the local smoothness constant
+    """
+    def __init__(self, lr0=1, option='1', *args, **kwargs):
+        if not 0.0 < lr0:
+            raise ValueError("Invalid lr0: {}".format(lr0))
+        super(Bb, self).__init__(*args, **kwargs)
+        self.lr0 = lr0
+        self.option = option
+        
+    def estimate_stepsize(self):
+        if self.option is '1':
+            L = (self.w-self.w_old) @ (self.grad-self.grad_old) / la.norm(self.w-self.w_old)**2
+        else:
+            L = la.norm(self.grad-self.grad_old)**2 / ((self.grad-self.grad_old) @ (self.w-self.w_old))
+        self.lr = self.lr0/L
+        
+    def step(self):
+        self.grad = self.grad_func(self.w)
+        self.estimate_stepsize()
+        self.w_old = self.w.copy()
+        self.grad_old = self.grad.copy()
+        return self.w - self.lr*self.grad
+        
+    def init_run(self, *args, **kwargs):
+        super(Bb, self).init_run(*args, **kwargs)
+        self.lrs = []
+        self.theta = np.inf
+        grad = self.grad_func(self.w)
+        # The first estimate is normalized gradient with a small coefficient
+        self.lr = 1 / la.norm(grad)
+        self.w_old = self.w.copy()
+        self.grad_old = grad
+        self.w -= self.lr * grad
+        self.save_checkpoint()
+        
+    def update_logs(self):
+        super(Bb, self).update_logs()
+        self.lrs.append(self.lr)
+        
+        
+class Polyak(Trainer):
+    """
+    Adaptive gradient descent based on the local smoothness constant
+    
+    Arguments:
+        eps (float): an estimate of 1 / L^2, where L is the global smoothness constant
+    """
+    def __init__(self, f_opt=0, lr_min=0.0, *args, **kwargs):
+        if lr_min < 0:
+            raise ValueError("Invalid lr_min: {}".format(lr_min))
+        super(Polyak, self).__init__(*args, **kwargs)
+        self.lr_min = lr_min
+        self.f_opt = f_opt
+        
+    def estimate_stepsize(self):
+        f = self.loss_func(self.w)
+        self.lr = max(self.lr_min, (f-self.f_opt) / la.norm(self.grad)**2)
+        
+    def step(self):
+        self.grad = self.grad_func(self.w)
+        self.estimate_stepsize()
+        return self.w - self.lr * self.grad
+        
+    def init_run(self, *args, **kwargs):
+        super(Polyak, self).init_run(*args, **kwargs)
+        self.w_ave = self.w.copy()
+        self.ws_ave = [self.w_ave.copy()]
+        self.lr_sum = 0
+        self.lrs = []
+        
+    def update_logs(self):
+        super(Polyak, self).update_logs()
+        self.lrs.append(self.lr)
+        self.ws_ave.append(self.w_ave.copy())
+        
+        
+class Armijo(Trainer):
+    """
+    Adaptive gradient descent based on the local smoothness constant
+    
+    Arguments:
+        eps (float): an estimate of 1 / L^2, where L is the global smoothness constant
+    """
+    def __init__(self, backtracking=0.5, armijo_const=0.5, lr0=None, *args, **kwargs):
+        if lr0 < 0:
+            raise ValueError("Invalid lr0: {}".format(lr0))
+        super(Armijo, self).__init__(*args, **kwargs)
+        self.lr = lr0
+        self.backtracking = backtracking
+        self.armijo_const = armijo_const
+        
+    def estimate_stepsize(self):
+        f = self.loss_func(self.w)
+        lr = self.lr / self.backtracking
+        w_new = self.w - lr * self.grad
+        f_new = self.loss_func(w_new)
+        armijo_condition = f_new <= f - self.lr * self.armijo_const * la.norm(self.grad)**2
+        while not armijo_condition:
+            lr *= self.backtracking
+            w_new = self.w - lr * self.grad
+            f_new = self.loss_func(w_new)
+            armijo_condition = f_new <= f - lr * self.armijo_const * la.norm(self.grad)**2
+            self.it += 1
+            
+        self.lr = lr
+        
+    def step(self):
+        self.grad = self.grad_func(self.w)
+        self.estimate_stepsize()
+        return self.w - self.lr * self.grad
+        
+    def init_run(self, *args, **kwargs):
+        super(Armijo, self).init_run(*args, **kwargs)
+        self.w_ave = self.w.copy()
+        self.ws_ave = [self.w_ave.copy()]
+        self.lr_sum = 0
+        self.lrs = []
+        
+    def update_logs(self):
+        super(Armijo, self).update_logs()
+        self.lrs.append(self.lr)
+        self.ws_ave.append(self.w_ave.copy())
+        
+
+class NestLine(Trainer):
+    """
+    Nesterov's accelerated gradient descent with line search.
+    
+    Arguments:
+        lr0 (float, optional): an estimate of the inverse smoothness constant
+            to initialize the stepsize
+        strongly_convex (boolean, optional): if true, uses the variant
+            for strongly convex functions, which requires mu>0 (default: False)
+        lr (float, optional): an estimate of the inverse smoothness constant
+    """
+    def __init__(self, lr0=1, mu=0, backtracking=0.5, tolerance=0., *args, **kwargs):
+        super(NestLine, self).__init__(*args, **kwargs)
+        self.lr = lr0
+        if mu < 0:
+            raise ValueError("Invalid mu: {}".format(mu))
+        self.mu = mu
+        self.backtracking = backtracking
+        self.tolerance = tolerance
+        
+    def condition(self, y, w_new):
+        grad_new = self.grad_func(w_new)
+        return grad_new @ (y-w_new) >= self.lr * la.norm(grad_new)**2 - self.tolerance
+        
+    def step(self):
+        self.lr = self.lr / self.backtracking
+        # Find a from quadratic equation a^2/(A+a) = 2*lr*(1 + mu*A)
+        discriminant = (self.lr * (1+self.mu*self.A))**2 + self.A * self.lr * (1+self.mu*self.A)
+        a = self.lr * (1+self.mu*self.A) + np.sqrt(discriminant)
+        y = (self.A*self.w + a*self.v) / (self.A+a)
+        gradient = self.grad_func(y)
+        w_new = y - self.lr * gradient
+        nest_condition_met = self.condition(y, w_new)
+        self.it += 1
+        
+        it_extra = 0
+        while not nest_condition_met and it_extra < 2 * self.it_max:
+            self.lr *= self.backtracking
+            discriminant = (self.lr * (1+self.mu*self.A))**2 + self.A * self.lr * (1+self.mu*self.A)
+            a = self.lr * (1+self.mu*self.A) + np.sqrt(discriminant)
+            y = self.A / (self.A+a) * self.w + a / (self.A+a) * self.v
+            gradient = self.grad_func(y)
+            w_new = y - self.lr * gradient
+            nest_condition_met = self.condition(y, w_new)
+            it_extra += 2
+            if self.lr * self.backtracking == 0:
+                break
+        
+        self.it += it_extra
+        self.w = w_new
+        self.A += a
+        self.grad = self.grad_func(self.w)
+        self.v -= a * self.grad
+        
+        return self.w
+    
+    def init_run(self, *args, **kwargs):
+        super(NestLine, self).init_run(*args, **kwargs)
+        self.A = 0
+        self.v = self.w.copy()
