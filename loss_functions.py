@@ -59,7 +59,7 @@ def logistic_loss(w, X, y, l2):
     """
     z = np.dot(X, w)
     y = np.asarray(y)
-    return np.mean((1 - y) * z - logsig(z)) + l2 / 2 * la.norm(w) ** 2
+    return np.mean((1-y)*z - logsig(z)) + l2/2 * la.norm(w)**2
 
 
 def logistic_gradient(w, X, y_, l2, normalize=True):
@@ -67,7 +67,7 @@ def logistic_gradient(w, X, y_, l2, normalize=True):
     Gradient of the logistic loss at point w with features X, labels y and l2 regularization.
     If labels are from {-1, 1}, they will be changed to {0, 1} internally
     """
-    y = (y_ + 1) / 2 if -1 in y_ else y_
+    y = (y_+1) / 2 if -1 in y_ else y_
     activation = scipy.special.expit(safe_sparse_dot(X, w, dense_output=True).ravel())
     grad = safe_sparse_add(X.T.dot(activation - y) / X.shape[0], l2 * w)
     grad = np.asarray(grad).ravel()
