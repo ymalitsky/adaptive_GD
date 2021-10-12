@@ -6,6 +6,8 @@ import torchvision
 
 import torchvision.transforms as transforms
 
+from pathlib import Path
+
 
 def seed_everything(seed=1029):
     '''
@@ -78,3 +80,23 @@ def accuracy_and_loss(net, dataloader, device, criterion):
             loss += criterion(outputs, labels).cpu().item() / len(dataloader)
 
     return correct / total, loss
+
+def save_results(losses, test_losses, train_acc, test_acc, it_train, it_test, grad_norms, method='sgd', 
+                 lrs=[], experiment='cifar10_resnet18', folder='./', to_save_extra=[], prefixes_extra=[]):
+    path = f'./{folder}/{experiment}/'
+    Path(path).mkdir(parents=True, exist_ok=True)
+    to_save = [losses, test_losses, train_acc, test_acc, it_train, it_test, grad_norms, lrs] + to_save_extra
+    prefixes = ['l', 'tl', 'a', 'ta', 'itr', 'ite', 'gn', 'lr'] + prefixes_extra
+    for log, prefix in zip(to_save, prefixes):
+        np.save(f'{path}/{method}_{prefix}.npy', log)
+        
+def load_results(method, logs_path, load_lr=False):
+    path = logs_path
+    if logs_path[-1] != '/':
+        path += '/'
+    path += method + '_'
+    prefixes = ['l', 'tl', 'a', 'ta', 'itr', 'ite', 'gn']
+    if load_lr:
+        prefixes += ['lr']
+    out = [np.load(path + prefix + '.npy') for prefix in prefixes]
+    return tuple(out)

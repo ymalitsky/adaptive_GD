@@ -9,14 +9,14 @@ class Adsgd(Optimizer):
     Adaptive SGD with estimation of the local smoothness (curvature).
     Based on https://arxiv.org/abs/1910.09529
     """
-    def __init__(self, params, lr=0.2, amplifier=0.02, theta=np.inf, damping=1, eps=1e-5, weight_decay=0):
+    def __init__(self, params, lr=0.2, amplifier=0.02, theta=1, damping=1, eps=1e-5, weight_decay=0):
         if lr is not required and lr < 0.0:
             raise ValueError("Invalid initial learning rate: {}".format(lr))
         if weight_decay < 0.0:
             raise ValueError("Invalid weight_decay value: {}".format(weight_decay))
 
         defaults = dict(lr=lr, amplifier=amplifier, theta=theta, damping=damping,
-                        option=option, eps=eps, weight_decay=weight_decay)
+                        eps=eps, weight_decay=weight_decay)
         super(Adsgd, self).__init__(params, defaults)
 
     def __setstate__(self, state):
@@ -25,7 +25,7 @@ class Adsgd(Optimizer):
             group.setdefault('lr', 0.2)
             group.setdefault('amplifier', 0.02)
             group.setdefault('damping', 1)
-            group.setdefault('theta', np.inf)
+            group.setdefault('theta', 1)
                 
     def compute_dif_norms(self, prev_optimizer=required):
         for group, prev_group in zip(self.param_groups, prev_optimizer.param_groups):
@@ -58,12 +58,14 @@ class Adsgd(Optimizer):
             eps = group['eps']
             lr = group['lr']
             damping = group['damping']
-            option = group['option']
             amplifier = group['amplifier']
             theta = group['theta']
             grad_dif_norm = group['grad_dif_norm']
             param_dif_norm = group['param_dif_norm']
-            lr_new = min(lr * np.sqrt(1 + amplifier * theta), param_dif_norm / (damping * grad_dif_norm)) + eps
+            if param_dif_norm > 0 and grad_dif_norm > 0:
+                lr_new = min(lr * np.sqrt(1 + amplifier * theta), param_dif_norm / (damping * grad_dif_norm)) + eps
+            else:
+                lr_new = lr * np.sqrt(1 + amplifier * theta)
             theta = lr_new / lr
             group['theta'] = theta
             group['lr'] = lr_new
@@ -73,5 +75,5 @@ class Adsgd(Optimizer):
                 d_p = p.grad.data
                 if group['weight_decay'] != 0:
                     d_p.add_(group['weight_decay'], p.data)
-                p.data.add_(-lr_new, d_p)
+                p.data.add_(d_p, alpha=-lr_new)
         return loss
